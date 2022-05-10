@@ -1,0 +1,1 @@
+"C:\Program Files\Git\bin\bash.exe" -c 'make TARGET=1'

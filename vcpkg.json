@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "solstice-ge",
+  "version": "0.0.0.1",
+  "dependencies": [
+    "bgfx",
+    {
+      "name": "bgfx",
+      "features": [ "tools" ]
+    },
+    "entt",
+    "glfw3",
+    "spdlog",
+    "glm",
+    "assimp"
+  ]
+}
