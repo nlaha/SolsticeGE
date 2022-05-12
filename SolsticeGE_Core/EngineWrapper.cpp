@@ -189,14 +189,14 @@ bool EngineWrapper::run()
 
     const auto light = m_registry.create();
     m_registry.emplace<c_transform>(light,
-        glm::vec3(3.0, 4.0, 3.0),
+        glm::vec3(3.0, 3.0, 3.0),
         glm::quat(glm::vec3(0, 0, 0)),
         glm::vec3(1.0, 1.0, 1.0)
         );
     m_registry.emplace<c_light>(light,
         1.0f,
-        glm::vec3(8.0f, 0.8f, 0.0f),
-        glm::vec3(1.0, 1.0, 1.0),
+        glm::vec3(5.0f, 0.8f, 0.0f),
+        glm::vec3(2.0, 2.0, 2.0),
         2.0f,
         1.8f
     );
