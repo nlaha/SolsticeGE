@@ -24,6 +24,8 @@ namespace SolsticeGE {
 
 	private:
 
+		void setTexture(const std::string& texture, int shaderSlot);
+
 		float angle;
 	};
 

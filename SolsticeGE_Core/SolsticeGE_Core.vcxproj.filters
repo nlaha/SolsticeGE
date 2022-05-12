@@ -51,7 +51,7 @@
     <ClCompile Include="BufferLoaderSystem.cpp">
       <Filter>Source Files\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="PointLightRenderSystem.cpp">
+    <ClCompile Include="LightRenderSystem.cpp">
       <Filter>Source Files\Systems</Filter>
     </ClCompile>
     <ClCompile Include="AABB.cpp">
@@ -91,7 +91,7 @@
     <ClInclude Include="BufferLoaderSystem.h">
       <Filter>Header Files\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="PointLightRenderSystem.h">
+    <ClInclude Include="LightRenderSystem.h">
       <Filter>Header Files\Systems</Filter>
     </ClInclude>
     <ClInclude Include="AABB.hpp">

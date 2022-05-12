@@ -165,7 +165,7 @@
     <ClCompile Include="EngineWrapper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MeshRenderSystem.cpp" />
-    <ClCompile Include="PointLightRenderSystem.cpp" />
+    <ClCompile Include="LightRenderSystem.cpp" />
     <ClCompile Include="RenderCommon.cpp" />
     <ClCompile Include="System.cpp" />
   </ItemGroup>
@@ -180,7 +180,7 @@
     <ClInclude Include="CameraRenderSystem.h" />
     <ClInclude Include="EngineWrapper.h" />
     <ClInclude Include="MeshRenderSystem.h" />
-    <ClInclude Include="PointLightRenderSystem.h" />
+    <ClInclude Include="LightRenderSystem.h" />
     <ClInclude Include="RenderCommon.h" />
     <ClInclude Include="RenderComponents.h" />
     <ClInclude Include="System.h" />

@@ -11,6 +11,6 @@ namespace SolsticeGE {
     {
         void update(entt::registry& registry);
 
-        void moveTextureToGPU(const std::weak_ptr<AssetLibrary::Texture>& texture, const std::uint16_t& id);
+        void moveTextureToGPU(const std::string& texture);
     };
 }

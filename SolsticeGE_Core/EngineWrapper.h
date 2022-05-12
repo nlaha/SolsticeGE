@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 #include <entt/entt.hpp>
+#include <string>
 
 #if BX_PLATFORM_LINUX
 #define GLFW_EXPOSE_NATIVE_X11
@@ -21,7 +22,7 @@
 #include "MeshRenderSystem.h"
 #include "CameraRenderSystem.h"
 #include "BufferLoaderSystem.h"
-#include "PointLightRenderSystem.h"
+#include "LightRenderSystem.h"
 
 namespace SolsticeGE {
 

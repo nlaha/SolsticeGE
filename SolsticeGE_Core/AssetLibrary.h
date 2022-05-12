@@ -8,6 +8,7 @@
 #include <bimg/bimg.h>
 #include <glm/vec3.hpp>
 #include <glm/glm.hpp>
+#include <string>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -63,8 +64,8 @@ namespace SolsticeGE {
 			bgfx::UniformHandle sampler;
 		};
 
-		bool getMesh(std::uint16_t id, std::weak_ptr<Mesh>& mesh);
-		bool getTexture(std::uint16_t id, std::weak_ptr<Texture>& texture);
+		bool getMesh(const std::string& name, std::weak_ptr<Mesh>& mesh);
+		bool getTexture(const std::string& name, std::weak_ptr<Texture>& texture);
 
 		bool loadAssets(const std::string& assetDir);
 		
@@ -78,8 +79,8 @@ namespace SolsticeGE {
 		std::weak_ptr<Mesh> loadMesh(const std::string& fileName);
 		std::weak_ptr<Texture> loadTexture(const std::string& fileName);
 
-		std::unordered_map<std::uint16_t, std::shared_ptr<Mesh>> mp_meshes;
-		std::unordered_map<std::uint16_t, std::shared_ptr<Texture>> mp_textures;
+		std::unordered_map<std::string, std::shared_ptr<Mesh>> mp_meshes;
+		std::unordered_map<std::string, std::shared_ptr<Texture>> mp_textures;
 
 	};
 }

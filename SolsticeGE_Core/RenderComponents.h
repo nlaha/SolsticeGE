@@ -45,14 +45,7 @@ namespace SolsticeGE {
 	/// contain shader info
 	/// </summary>
 	struct c_mesh {
-		std::uint16_t assetId;
-	};
-
-	/// <summary>
-	/// Holds data about a model
-	/// </summary>
-	struct c_model {
-		std::string filepath;
+		std::string assetId;
 	};
 
 	/// <summary>
@@ -71,16 +64,27 @@ namespace SolsticeGE {
 	/// textures, parameters, etc.
 	/// </summary>
 	struct c_material {
-		std::uint16_t diffuse_tex;
-		std::uint16_t normal_tex;
-		std::uint16_t roughness_tex;
-
+		std::string diffuse_tex;
+		std::string normal_tex;
+		std::string ao_tex;
+		std::string metalRoughness_tex;
+		std::string emissive_tex;
 	};
 
 	/// <summary>
-	/// Point light
+	/// Holds data for lights
 	/// </summary>
-	struct c_light_point {
+	struct c_light {
+
+		// 0 = directional, 1 = point
+		float type;
+
+		/*
+			This is different for each type
+			Directional: [Unused, Unused, Unused]
+			Point: [OuterRadius, InnerRadius, Unused]
+		*/
+		glm::vec3 params;
 		glm::vec3 color;
 		float outer;
 		float inner;

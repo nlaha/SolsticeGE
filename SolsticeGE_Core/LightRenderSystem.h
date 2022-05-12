@@ -5,7 +5,7 @@
 #include "AABB.hpp"
 
 namespace SolsticeGE {
-    class PointLightRenderSystem :
+    class LightRenderSystem :
         public System
     {
     public:

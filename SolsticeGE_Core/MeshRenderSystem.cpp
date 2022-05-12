@@ -37,7 +37,7 @@ void MeshRenderSystem::update(entt::registry& registry)
 			continue;
 		}
 
-		if (meshAsset.lock()->bufferLoaded) {
+		if (meshAsset.lock() != nullptr && meshAsset.lock()->bufferLoaded) {
 
 			glm::mat4 modelMatrix;
 
@@ -59,26 +59,34 @@ void MeshRenderSystem::update(entt::registry& registry)
 			bgfx::setUniform(EngineWrapper::shaderUniforms.at("normalMatrix"), &normalMatrix[0]);
 
 			// render diffuse map
-			std::weak_ptr<AssetLibrary::Texture> diffTexAsset;
-			if (EngineWrapper::assetLib.getTexture(material.diffuse_tex, diffTexAsset))
-			{
-				bgfx::setTexture(0,
-					diffTexAsset.lock()->sampler,
-					diffTexAsset.lock()->texHandle);
-			}
+			setTexture(material.diffuse_tex, 0);
 
 			// render normal map
-			std::weak_ptr<AssetLibrary::Texture> normTexAsset;
-			if (EngineWrapper::assetLib.getTexture(material.normal_tex, normTexAsset))
-			{
-				bgfx::setTexture(1,
-					normTexAsset.lock()->sampler,
-					normTexAsset.lock()->texHandle);
-			}
+			setTexture(material.normal_tex, 1);
+
+			// render ao map
+			setTexture(material.ao_tex, 2);
+
+			// render metalness/roughness map
+			setTexture(material.metalRoughness_tex, 3);
+
+			// render emissive map
+			setTexture(material.emissive_tex, 4);
 
 			bgfx::setState(state);
 
 			bgfx::submit(kRenderPassGeometry, shader.program);
 		}
+	}
+}
+
+void MeshRenderSystem::setTexture(const std::string& texture, int shaderSlot)
+{
+	std::weak_ptr<AssetLibrary::Texture> texAsset;
+	if (EngineWrapper::assetLib.getTexture(texture, texAsset))
+	{
+		bgfx::setTexture(shaderSlot,
+			texAsset.lock()->sampler,
+			texAsset.lock()->texHandle);
 	}
 }

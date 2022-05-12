@@ -48,45 +48,49 @@ void BufferLoaderSystem::update(entt::registry& registry)
 		auto& material = material_view.get<c_material>(entity);
 
 		// load diffuse texture
-		std::weak_ptr<AssetLibrary::Texture> diffTexAsset;
-		if (!EngineWrapper::assetLib.getTexture(material.diffuse_tex, diffTexAsset))
-		{
-			continue;
-		}
-
-		moveTextureToGPU(diffTexAsset, material.diffuse_tex);
+		moveTextureToGPU(material.diffuse_tex);
 
 		// load normal texture
-		std::weak_ptr<AssetLibrary::Texture> normTexAsset;
-		if (!EngineWrapper::assetLib.getTexture(material.normal_tex, normTexAsset))
-		{
-			continue;
-		}
+		moveTextureToGPU(material.normal_tex);
 
-		moveTextureToGPU(normTexAsset, material.normal_tex);
+		// load ao texture
+		moveTextureToGPU(material.ao_tex);
+
+		// load metalness/roughness texture
+		moveTextureToGPU(material.metalRoughness_tex);
+
+		// load emissive texture
+		moveTextureToGPU(material.emissive_tex);
 	}
 }
 
-void BufferLoaderSystem::moveTextureToGPU(const std::weak_ptr<AssetLibrary::Texture>& texture, const std::uint16_t& id)
+static int texCount = 0;
+void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
 {
-	if (!texture.lock()->bufferLoaded) {
 
-		std::stringstream samplerName;
-		samplerName << "sampler" << id;
+	std::weak_ptr<AssetLibrary::Texture> texAsset;
+	if (EngineWrapper::assetLib.getTexture(texture, texAsset))
+	{
+		if (!texAsset.lock()->bufferLoaded) {
 
-		texture.lock()->sampler = bgfx::createUniform(
-			samplerName.str().c_str(),
-			bgfx::UniformType::Sampler);
+			std::stringstream samplerName;
+			samplerName << "sampler" << texCount;
+			texCount++;
 
-		const bgfx::Memory* mem = bgfx::makeRef(
-			texture.lock()->texData.data(), texture.lock()->texData.size()
-		);
+			texAsset.lock()->sampler = bgfx::createUniform(
+				samplerName.str().c_str(),
+				bgfx::UniformType::Sampler);
 
-		texture.lock()->texHandle = bgfx::createTexture(
-			mem,
-			BGFX_TEXTURE_NONE,
-			0, &texture.lock()->texInfo);
+			const bgfx::Memory* mem = bgfx::makeRef(
+				texAsset.lock()->texData.data(), texAsset.lock()->texData.size()
+			);
 
-		texture.lock()->bufferLoaded = true;
+			texAsset.lock()->texHandle = bgfx::createTexture(
+				mem,
+				BGFX_TEXTURE_NONE,
+				0, &texAsset.lock()->texInfo);
+
+			texAsset.lock()->bufferLoaded = true;
+		}
 	}
 }

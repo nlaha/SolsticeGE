@@ -101,7 +101,7 @@ bool EngineWrapper::init()
     m_renderSystems.push_back(std::move(std::make_unique<CameraRenderSystem>()));
     m_renderSystems.push_back(std::move(std::make_unique<BufferLoaderSystem>()));
     m_renderSystems.push_back(std::move(std::make_unique<MeshRenderSystem>()));
-    m_renderSystems.push_back(std::move(std::make_unique<PointLightRenderSystem>()));
+    m_renderSystems.push_back(std::move(std::make_unique<LightRenderSystem>()));
 
     return true;
 }
@@ -170,9 +170,16 @@ bool EngineWrapper::run()
     bgfx::ProgramHandle program = bgfx::createProgram(vshader, fshader, true);
 
     const auto entity = m_registry.create();
-    m_registry.emplace<c_mesh>(entity, uint16_t(1));
+    m_registry.emplace<c_mesh>(entity, "assets\\DamagedHelmet.glb");
     m_registry.emplace<c_shader>(entity, vshader, fshader, program);
-    m_registry.emplace<c_material>(entity, uint16_t(0), uint16_t(1), uint16_t(0));
+
+    m_registry.emplace<c_material>(entity, 
+        "assets\\Default_albedo.dds",
+        "assets\\Default_normal.dds",
+        "assets\\Default_AO.dds",
+        "assets\\Default_metalRoughness.dds",
+        "assets\\Default_emissive.dds"
+    );
 
     m_registry.emplace<c_transform>(entity,
         glm::vec3(0.0, 0.0, 0.0),
@@ -182,27 +189,17 @@ bool EngineWrapper::run()
 
     const auto light = m_registry.create();
     m_registry.emplace<c_transform>(light,
-        glm::vec3(0.0, 3.0, 0.0),
+        glm::vec3(3.0, 4.0, 3.0),
         glm::quat(glm::vec3(0, 0, 0)),
         glm::vec3(1.0, 1.0, 1.0)
         );
-    m_registry.emplace<c_light_point>(light,
+    m_registry.emplace<c_light>(light,
+        1.0f,
+        glm::vec3(8.0f, 0.8f, 0.0f),
         glm::vec3(1.0, 1.0, 1.0),
         2.0f,
         1.8f
     );
-
-    const auto light2 = m_registry.create();
-    m_registry.emplace<c_transform>(light2,
-        glm::vec3(0.0, -3.0, 0.0),
-        glm::quat(glm::vec3(0, 0, 0)),
-        glm::vec3(1.0, 1.0, 1.0)
-        );
-    m_registry.emplace<c_light_point>(light2,
-        glm::vec3(1.0, 0.0, 1.0),
-        2.0f,
-        1.8f
-        );
 
     // create camera
     const auto camera = m_registry.create();
@@ -227,10 +224,10 @@ bool EngineWrapper::run()
         );
     activeCamera = camera;
 
-    // Set palette color for index 0
+    // Set palette color for black
     bgfx::setPaletteColor(0, UINT32_C(0x00000000));
 
-    // Set palette color for index 1
+    // Set palette color for grey
     bgfx::setPaletteColor(1, UINT32_C(0x303030ff));
 
     // Set geometry pass view clear state.
@@ -238,7 +235,10 @@ bool EngineWrapper::run()
         , BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH
         , 1.0f
         , 0
-        , 1
+        , 0
+        , 0
+        , 0
+        , 0
         , 0
         , 0
     );
@@ -259,8 +259,8 @@ bool EngineWrapper::run()
         | BGFX_SAMPLER_V_CLAMP
         ;
 
-    bgfx::Attachment gbufferAt[4];
-    bgfx::TextureHandle m_gbufferTex[4];
+    bgfx::Attachment gbufferAt[7];
+    bgfx::TextureHandle m_gbufferTex[7];
 
     // geometry buffer tex
     // color
@@ -271,30 +271,55 @@ bool EngineWrapper::run()
     );
     gbufferAt[0].init(m_gbufferTex[0]);
 
+    // normal
+    // packed into two 16 bit channels (see shader for more info)
+    m_gbufferTex[1] = bgfx::createTexture2D(
+        uint16_t(videoSettings.windowWidth),
+        uint16_t(videoSettings.windowHeight), 
+        false, 1, bgfx::TextureFormat::RG16F, BGFX_TEXTURE_RT | tsFlags);
+    gbufferAt[1].init(m_gbufferTex[1]);
+
+    // position
+    m_gbufferTex[2] = bgfx::createTexture2D(
+        uint16_t(videoSettings.windowWidth),
+        uint16_t(videoSettings.windowHeight),
+        false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags);
+    gbufferAt[2].init(m_gbufferTex[2]);
+
+    // AO
+    m_gbufferTex[3] = bgfx::createTexture2D(
+        uint16_t(videoSettings.windowWidth),
+        uint16_t(videoSettings.windowHeight),
+        false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags
+    );
+    gbufferAt[3].init(m_gbufferTex[3]);
+
+    // Metalness / Roughness
+    m_gbufferTex[4] = bgfx::createTexture2D(
+        uint16_t(videoSettings.windowWidth),
+        uint16_t(videoSettings.windowHeight),
+        false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags
+    );
+    gbufferAt[4].init(m_gbufferTex[4]);
+
+    // Emissive
+    m_gbufferTex[5] = bgfx::createTexture2D(
+        uint16_t(videoSettings.windowWidth),
+        uint16_t(videoSettings.windowHeight),
+        false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags
+    );
+    gbufferAt[5].init(m_gbufferTex[5]);
+
     // depth buffer tex
     bgfx::TextureFormat::Enum depthFormat =
         bgfx::isTextureValid(0, false, 1, bgfx::TextureFormat::D32F, BGFX_TEXTURE_RT | tsFlags)
         ? bgfx::TextureFormat::D32F : bgfx::TextureFormat::D24;
 
-    m_gbufferTex[1] = bgfx::createTexture2D(
+    m_gbufferTex[6] = bgfx::createTexture2D(
         uint16_t(videoSettings.windowWidth),
         uint16_t(videoSettings.windowHeight),
         false, 1, depthFormat, BGFX_TEXTURE_RT | tsFlags);
-    gbufferAt[1].init(m_gbufferTex[1]);
-
-    // normal
-    m_gbufferTex[2] = bgfx::createTexture2D(
-        uint16_t(videoSettings.windowWidth),
-        uint16_t(videoSettings.windowHeight), 
-        false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags);
-    gbufferAt[2].init(m_gbufferTex[2]);
-
-    // position
-    m_gbufferTex[3] = bgfx::createTexture2D(
-        uint16_t(videoSettings.windowWidth),
-        uint16_t(videoSettings.windowHeight),
-        false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags);
-    gbufferAt[3].init(m_gbufferTex[3]);
+    gbufferAt[6].init(m_gbufferTex[6]);
 
     // light buffer tex
     bgfx::TextureHandle m_lightBufferTex;
@@ -304,7 +329,7 @@ bool EngineWrapper::run()
         false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | tsFlags);
 
     // set up framebuffers
-    gbuffer = bgfx::createFrameBuffer(4, gbufferAt, true);
+    gbuffer = bgfx::createFrameBuffer(7, gbufferAt, true);
 
     bgfx::FrameBufferHandle m_lightBuffer;
     m_lightBuffer = bgfx::createFrameBuffer(1, &m_lightBufferTex, true);
@@ -331,12 +356,20 @@ bool EngineWrapper::run()
     // setup render pass samplers
     EngineWrapper::shaderSamplers.emplace("albedo",
         bgfx::createUniform("s_albedo", bgfx::UniformType::Sampler));
+    EngineWrapper::shaderSamplers.emplace("depth",
+        bgfx::createUniform("s_depth", bgfx::UniformType::Sampler));
+
     EngineWrapper::shaderSamplers.emplace("normal",
         bgfx::createUniform("s_normal", bgfx::UniformType::Sampler));
     EngineWrapper::shaderSamplers.emplace("position",
         bgfx::createUniform("s_position", bgfx::UniformType::Sampler));
-    EngineWrapper::shaderSamplers.emplace("depth",
-        bgfx::createUniform("s_depth", bgfx::UniformType::Sampler));
+    EngineWrapper::shaderSamplers.emplace("ao",
+        bgfx::createUniform("s_ao", bgfx::UniformType::Sampler));
+    EngineWrapper::shaderSamplers.emplace("metalRoughness",
+        bgfx::createUniform("s_metalRoughness", bgfx::UniformType::Sampler));
+    EngineWrapper::shaderSamplers.emplace("emissive",
+        bgfx::createUniform("s_emissive", bgfx::UniformType::Sampler));
+
     EngineWrapper::shaderSamplers.emplace("light",
         bgfx::createUniform("s_light", bgfx::UniformType::Sampler));
 
@@ -348,9 +381,11 @@ bool EngineWrapper::run()
 
     // lighting uniforms
     EngineWrapper::shaderUniforms.emplace(
-        "lightPositions", bgfx::createUniform("u_lightPositions", bgfx::UniformType::Vec4, 32));
+        "lightPosition", bgfx::createUniform("u_lightPosition", bgfx::UniformType::Vec4, 1));
     EngineWrapper::shaderUniforms.emplace(
-        "lightColors", bgfx::createUniform("u_lightColors", bgfx::UniformType::Vec4, 32));
+        "lightColor", bgfx::createUniform("u_lightColor", bgfx::UniformType::Vec4, 1));
+    EngineWrapper::shaderUniforms.emplace(
+        "lightTypeParams", bgfx::createUniform("u_lightTypeParams", bgfx::UniformType::Vec4, 1));
 
     // Set view 0 default viewport.
     bgfx::setViewRect(0, 0, 0, 

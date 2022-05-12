@@ -9,9 +9,9 @@ AssetLibrary::AssetLibrary()
 	this->m_textureCount = 0;
 }
 
-bool AssetLibrary::getMesh(std::uint16_t id, std::weak_ptr<Mesh>& mesh)
+bool AssetLibrary::getMesh(const std::string& name, std::weak_ptr<Mesh>& mesh)
 {
-	const auto& iter = this->mp_meshes.find(id);
+	const auto& iter = this->mp_meshes.find(name);
 	if (iter != this->mp_meshes.end())
 	{
 		if (iter->second != nullptr)
@@ -20,19 +20,19 @@ bool AssetLibrary::getMesh(std::uint16_t id, std::weak_ptr<Mesh>& mesh)
 			return true;
 		}
 		else {
-			spdlog::error("Mesh: {} was loaded but is now null!", id);
+			spdlog::error("Mesh: {} was loaded but is now null!", name);
 			return false;
 		}
 	}
 	else {
-		spdlog::error("Mesh: {} is not loaded!", id);
+		spdlog::error("Mesh: {} is not loaded!", name);
 		return false;
 	}
 }
 
-bool AssetLibrary::getTexture(std::uint16_t id, std::weak_ptr<Texture>& texture)
+bool AssetLibrary::getTexture(const std::string& name, std::weak_ptr<Texture>& texture)
 {
-	const auto& iter = this->mp_textures.find(id);
+	const auto& iter = this->mp_textures.find(name);
 	if (iter != this->mp_textures.end())
 	{
 		if (iter->second != nullptr)
@@ -41,12 +41,12 @@ bool AssetLibrary::getTexture(std::uint16_t id, std::weak_ptr<Texture>& texture)
 			return true;
 		}
 		else {
-			spdlog::error("Texture: {} was loaded but is now null!", id);
+			spdlog::error("Texture: {} was loaded but is now null!", name);
 			return false;
 		}
 	}
 	else {
-		spdlog::error("Texture: {} is not loaded!", id);
+		spdlog::error("Texture: {} is not loaded!", name);
 		return false;
 	}
 }
@@ -151,17 +151,18 @@ std::weak_ptr<AssetLibrary::Mesh> AssetLibrary::loadMesh(const std::string& file
 						vert.m_v = 1-uv.y;
 					}
 
+					// fix for symmetric meshes
 					glm::vec3 normal(vert.m_normx, vert.m_normy, vert.m_normz);
 					glm::vec3 tangent(vert.m_tanx, vert.m_tany, vert.m_tanz);
 					glm::vec3 bitangent(vert.m_btanx, vert.m_btany, vert.m_btanz);
 
 					if (glm::dot(glm::cross(normal, tangent), bitangent) < 0.0f) {
 						tangent = tangent * -1.0f;
-					}
 
-					vert.m_tanx = tangent.x;
-					vert.m_tany = tangent.y;
-					vert.m_tanz = tangent.z;
+						vert.m_tanx = tangent.x;
+						vert.m_tany = tangent.y;
+						vert.m_tanz = tangent.z;
+					}
 
 					mesh->vdata.push_back(vert);
 				}
@@ -185,7 +186,7 @@ std::weak_ptr<AssetLibrary::Mesh> AssetLibrary::loadMesh(const std::string& file
 		BasicVertex::init();
 	}
 
-	this->mp_meshes.emplace(m_meshCount++, mesh);
+	this->mp_meshes.emplace(fileName, mesh);
 
 	return mesh;
 }
@@ -219,7 +220,9 @@ std::weak_ptr<AssetLibrary::Texture> AssetLibrary::loadTexture(const std::string
 
 	texture->texData = vec;
 
-	this->mp_textures.emplace(m_textureCount++, texture);
+	this->mp_textures.emplace(fileName, texture);
+
+	spdlog::info("Texture loaded from {}", fileName);
 
 	return texture;
 }
