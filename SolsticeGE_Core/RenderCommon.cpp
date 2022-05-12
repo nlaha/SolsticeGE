@@ -3,6 +3,7 @@
 using namespace SolsticeGE;
 
 bgfx::VertexLayout BasicVertex::ms_layout;
+bgfx::VertexLayout PassVertex::ms_layout;
 
 bgfx::ShaderHandle RenderUtil::loadShader(const std::string& fname)
 {

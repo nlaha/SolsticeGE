@@ -4,8 +4,10 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
+#include <array>
 #include <glm/gtc/quaternion.hpp>
 
+#include "AssetLibrary.h"
 #include "RenderCommon.h"
 
 namespace SolsticeGE {
@@ -43,14 +45,12 @@ namespace SolsticeGE {
 	/// contain shader info
 	/// </summary>
 	struct c_mesh {
-		bool isValid;
-		bgfx::VertexBufferHandle vbuf;
-		bgfx::IndexBufferHandle ibuf;
-
-		std::vector<BasicVertex> vdata;
-		std::vector<uint16_t> idata;
+		std::uint16_t assetId;
 	};
 
+	/// <summary>
+	/// Holds data about a model
+	/// </summary>
 	struct c_model {
 		std::string filepath;
 	};
@@ -66,11 +66,24 @@ namespace SolsticeGE {
 		bgfx::ProgramHandle program;
 	};
 
+	/// <summary>
+	/// Holds material data,
+	/// textures, parameters, etc.
+	/// </summary>
 	struct c_material {
-		std::vector<bgfx::TextureHandle> diffuse_tex;
-		std::vector<bgfx::TextureHandle> normal_tex;
-		std::vector<bgfx::TextureHandle> roughness_tex;
+		std::uint16_t diffuse_tex;
+		std::uint16_t normal_tex;
+		std::uint16_t roughness_tex;
 
+	};
+
+	/// <summary>
+	/// Point light
+	/// </summary>
+	struct c_light_point {
+		glm::vec3 color;
+		float outer;
+		float inner;
 	};
 
 	/// <summary>
@@ -81,6 +94,10 @@ namespace SolsticeGE {
 		float clipNear;
 		float clipFar;
 		glm::vec2 size;
+		std::vector<RenderPass> passes;
+
+		glm::mat4 viewMatrix;
+		glm::mat4 projMatrix;
 	};
 
 }

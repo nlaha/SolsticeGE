@@ -15,13 +15,20 @@
 
 #include "System.h"
 #include "RenderCommon.h"
+#include "AssetLibrary.h"
 
 // systems
 #include "MeshRenderSystem.h"
 #include "CameraRenderSystem.h"
-#include "ModelLoaderSystem.h"
+#include "BufferLoaderSystem.h"
+#include "PointLightRenderSystem.h"
 
 namespace SolsticeGE {
+
+	constexpr bgfx::ViewId kRenderPassGeometry = 0;
+	constexpr bgfx::ViewId kRenderPassClearUav = 1;
+	constexpr bgfx::ViewId kRenderPassLight = 2;
+	constexpr bgfx::ViewId kRenderPassCombine = 3;
 
 	struct VideoSettings
 	{
@@ -33,21 +40,40 @@ namespace SolsticeGE {
 	class EngineWrapper
 	{
 	public:
+
 		EngineWrapper();
 		~EngineWrapper();
 
 		// delete copy constructor, it doesn't
 		// make sense to copy a wrapper
 		EngineWrapper(const EngineWrapper& other) = delete;
+		void operator=(EngineWrapper const&) = delete;
 
 		bool init();
 		bool run();
 
 		static bool enableStats;
+		static VideoSettings videoSettings;
+		static AssetLibrary assetLib;
+		static std::unordered_map<std::string, bgfx::UniformHandle> shaderUniforms;
+		static std::unordered_map<std::string, bgfx::UniformHandle> shaderSamplers;
+
+		static float dt;
+
+		static void screenSpaceQuad(
+			float _textureWidth, float _textureHeight, 
+			float _texelHalf, bool _originBottomLeft, 
+			float _width = 1.0f, float _height = 1.0f);
+
+		static bgfx::FrameBufferHandle gbuffer;
+		static float texelHalf;
+		static const bgfx::Caps* renderCaps;
+		static bgfx::ProgramHandle lightProgram;
+
+		static entt::entity activeCamera;
 
 	private:
 		GLFWwindow* mp_window;
-		static VideoSettings videoSettings;
 
 		// ECS
 		entt::registry m_registry;

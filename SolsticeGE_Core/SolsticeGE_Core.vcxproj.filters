@@ -19,6 +19,12 @@
     <Filter Include="Source Files\Systems">
       <UniqueIdentifier>{f7ffdab0-3127-47d0-8fcc-81828a77d63f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ThirdParty">
+      <UniqueIdentifier>{54fda505-197a-4ce7-a6e6-d97ecfa171fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty">
+      <UniqueIdentifier>{f2bb69a1-5969-4a22-a62d-31f5c97fbbdc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -39,8 +45,17 @@
     <ClCompile Include="CameraRenderSystem.cpp">
       <Filter>Source Files\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="ModelLoaderSystem.cpp">
+    <ClCompile Include="AssetLibrary.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BufferLoaderSystem.cpp">
       <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="PointLightRenderSystem.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="AABB.cpp">
+      <Filter>Source Files\ThirdParty</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -70,8 +85,17 @@
     <ClInclude Include="CameraRenderSystem.h">
       <Filter>Header Files\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="ModelLoaderSystem.h">
+    <ClInclude Include="AssetLibrary.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BufferLoaderSystem.h">
       <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="PointLightRenderSystem.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="AABB.hpp">
+      <Filter>Header Files\ThirdParty</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

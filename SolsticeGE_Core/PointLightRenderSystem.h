@@ -1,20 +1,14 @@
 #pragma once
 #include "System.h"
 
-#include <spdlog/spdlog.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 #include "RenderComponents.h"
-#include "RenderCommon.h"
+#include "AABB.hpp"
 
 namespace SolsticeGE {
-    class ModelLoaderSystem :
+    class PointLightRenderSystem :
         public System
     {
     public:
         void update(entt::registry& registry);
-
     };
 }

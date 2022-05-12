@@ -158,11 +158,14 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AABB.cpp" />
+    <ClCompile Include="AssetLibrary.cpp" />
+    <ClCompile Include="BufferLoaderSystem.cpp" />
     <ClCompile Include="CameraRenderSystem.cpp" />
     <ClCompile Include="EngineWrapper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MeshRenderSystem.cpp" />
-    <ClCompile Include="ModelLoaderSystem.cpp" />
+    <ClCompile Include="PointLightRenderSystem.cpp" />
     <ClCompile Include="RenderCommon.cpp" />
     <ClCompile Include="System.cpp" />
   </ItemGroup>
@@ -171,10 +174,13 @@
     <None Include="..\vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AABB.hpp" />
+    <ClInclude Include="AssetLibrary.h" />
+    <ClInclude Include="BufferLoaderSystem.h" />
     <ClInclude Include="CameraRenderSystem.h" />
     <ClInclude Include="EngineWrapper.h" />
     <ClInclude Include="MeshRenderSystem.h" />
-    <ClInclude Include="ModelLoaderSystem.h" />
+    <ClInclude Include="PointLightRenderSystem.h" />
     <ClInclude Include="RenderCommon.h" />
     <ClInclude Include="RenderComponents.h" />
     <ClInclude Include="System.h" />

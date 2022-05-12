@@ -17,7 +17,14 @@ namespace SolsticeGE {
 	/// </summary>
 	class MeshRenderSystem : public System
 	{
+	public:
+		MeshRenderSystem();
+
 		void update(entt::registry& registry);
+
+	private:
+
+		float angle;
 	};
 
 }
