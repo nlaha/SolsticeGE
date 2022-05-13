@@ -57,7 +57,7 @@ namespace SolsticeGE {
 
 			bgfx::TextureHandle texHandle;
 
-			std::vector<unsigned char> texData;
+			unsigned char* texData;
 
 			bgfx::TextureInfo texInfo;
 

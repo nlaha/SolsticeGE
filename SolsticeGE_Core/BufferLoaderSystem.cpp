@@ -81,14 +81,15 @@ void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
 				samplerName.str().c_str(),
 				bgfx::UniformType::Sampler);
 
+			bgfx::TextureInfo texInfo = texAsset.lock()->texInfo;
+
 			const bgfx::Memory* mem = bgfx::makeRef(
-				texAsset.lock()->texData.data(), texAsset.lock()->texData.size()
+				texAsset.lock()->texData, texInfo.storageSize
 			);
 
-			texAsset.lock()->texHandle = bgfx::createTexture(
-				mem,
-				BGFX_TEXTURE_NONE,
-				0, &texAsset.lock()->texInfo);
+			texAsset.lock()->texHandle = bgfx::createTexture2D(
+				texInfo.width, texInfo.height,
+				false, 1, texInfo.format, BGFX_TEXTURE_NONE, mem);
 
 			texAsset.lock()->bufferLoaded = true;
 		}
