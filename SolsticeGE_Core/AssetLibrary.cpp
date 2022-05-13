@@ -1,8 +1,5 @@
 #include "AssetLibrary.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 using namespace SolsticeGE;
 namespace fs = std::filesystem;
 
@@ -67,7 +64,7 @@ bool AssetLibrary::loadAssets(const std::string& assetDir)
 				loadMesh(entry.path().string());
 			}
 
-			if (entry.path().extension() == ".jpg")
+			if (entry.path().extension() == ".dds")
 			{			
 				loadTexture(entry.path().string());
 
@@ -199,45 +196,33 @@ std::weak_ptr<AssetLibrary::Texture> AssetLibrary::loadTexture(const std::string
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 	texture->bufferLoaded = false;
 
-	//// open the file:
-	//std::ifstream file(fileName, std::ios::binary);
+	// open the file:
+	std::ifstream file(fileName, std::ios::binary);
 
-	//// Stop eating new lines in binary mode!!!
-	//file.unsetf(std::ios::skipws);
+	// Stop eating new lines in binary mode!!!
+	file.unsetf(std::ios::skipws);
 
-	//// get its size:
-	//std::streampos fileSize;
+	// get its size:
+	std::streampos fileSize;
 
-	//file.seekg(0, std::ios::end);
-	//fileSize = file.tellg();
-	//file.seekg(0, std::ios::beg);
+	file.seekg(0, std::ios::end);
+	fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
 
-	//// reserve capacity
-	//std::vector<unsigned char> vec;
-	//vec.reserve(fileSize);
+	// reserve capacity
+	std::vector<unsigned char> vec;
+	vec.reserve(fileSize);
 
-	//// read the data:
-	//vec.insert(vec.begin(),
-	//	std::istream_iterator<unsigned char>(file),
-	//	std::istream_iterator<unsigned char>());
+	// read the data:
+	vec.insert(vec.begin(),
+		std::istream_iterator<unsigned char>(file),
+		std::istream_iterator<unsigned char>());
 
-	int width, height, nrComponents;
-	unsigned char* data = stbi_load(fileName.c_str(), &width, &height, &nrComponents, STBI_rgb_alpha);
-
-	texture->texData = data;
-
-	bgfx::TextureInfo texInfo;
-
-	texInfo.width = width;
-	texInfo.height = height;
-	texInfo.storageSize = (width * height) * 4;
-	texInfo.format = bgfx::TextureFormat::RGBA8;
-
-	texture->texInfo = texInfo;
+	texture->texData = vec;
 
 	this->mp_textures.emplace(fileName, texture);
 
-	spdlog::info("Texture loaded from {} with channels {}", fileName, nrComponents);
+	spdlog::info("Texture loaded from {}", fileName);
 
 	return texture;
 }

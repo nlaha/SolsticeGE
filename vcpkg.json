@@ -12,7 +12,6 @@
     "glfw3",
     "spdlog",
     "glm",
-    "assimp",
-    "stb"
+    "assimp"
   ]
 }

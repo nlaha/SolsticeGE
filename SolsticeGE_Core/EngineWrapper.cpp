@@ -174,11 +174,11 @@ bool EngineWrapper::run()
     m_registry.emplace<c_shader>(entity, vshader, fshader, program);
 
     m_registry.emplace<c_material>(entity, 
-        "assets\\Default_albedo.jpg",
-        "assets\\Default_normal.jpg",
-        "assets\\Default_AO.jpg",
-        "assets\\Default_metalRoughness.jpg",
-        "assets\\Default_emissive.jpg"
+        "assets\\Default_albedo.dds",
+        "assets\\Default_normal.dds",
+        "assets\\Default_AO.dds",
+        "assets\\Default_metalRoughness.dds",
+        "assets\\Default_emissive.dds"
     );
 
     m_registry.emplace<c_transform>(entity,
@@ -410,9 +410,7 @@ bool EngineWrapper::run()
         }
 
         // combined pass
-        bgfx::setTexture(0, 
-            EngineWrapper::shaderSamplers.at("light"), 
-            m_lightBufferTex);
+        bgfx::setTexture(0, EngineWrapper::shaderSamplers.at("light"), m_lightBufferTex);
         bgfx::setState(0
             | BGFX_STATE_WRITE_RGB
             | BGFX_STATE_WRITE_A
