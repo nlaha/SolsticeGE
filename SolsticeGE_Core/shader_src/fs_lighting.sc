@@ -63,16 +63,16 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 void main()
 {	
 	// ========= Textures ========
-	vec3 albedo = texture2D(s_albedo, v_texcoord0).rgb;
-	vec2 metalRoughness = texture2D(s_metalRoughness, v_texcoord0).rg;
-	vec3 emissive = texture2D(s_emissive, v_texcoord0).rgb;
-	vec3 position = convertRGB2XYZ(texture2D(s_position, v_texcoord0).rgb);
-	vec3 normal   = decodeNormalOctahedron(texture2D(s_normal,   v_texcoord0).rg);
-	vec4 depth    = texture2D(s_depth,    v_texcoord0);
+	vec3 albedo         = toLinear(texture2D(s_albedo, v_texcoord0).rgb);
+	vec3 metalRoughness = texture2D(s_metalRoughness, v_texcoord0).rgb;
+	vec3 position       = convertRGB2XYZ(texture2D(s_position, v_texcoord0).rgb);
+	vec3 normal         = decodeNormalOctahedron(texture2D(s_normal, v_texcoord0).rg);
+	vec4 depth          = texture2D(s_depth, v_texcoord0);
 	
 	// ========= PBR Data ========
-	float ao = texture2D(s_ao, v_texcoord0).r;
-	float metallic = metalRoughness.r;
+	vec3 emissive   = toLinear(texture2D(s_emissive, v_texcoord0).rgb);
+	float ao        = texture2D(s_ao, v_texcoord0).r;
+	float metallic  = metalRoughness.b;
 	float roughness = metalRoughness.g;
 
 	// ========= Lighting =========
@@ -122,8 +122,8 @@ void main()
     float NdotL = max(dot(normal, lightDir), 0.0);        
     lighting += (kD * albedo / PI + specular) * radiance * NdotL;
 
-	vec3 ambient = vec3(0.03, 0.03, 0.03) * albedo * ao;
-	vec3 color   = ambient + lighting;  
+	vec3 ambient = vec3(0.1, 0.1, 0.1) * albedo * ao;
+	vec3 color   = ambient + lighting + emissive;  
 
 	gl_FragColor = vec4(color, 1.0);
 }
