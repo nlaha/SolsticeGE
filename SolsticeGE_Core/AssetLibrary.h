@@ -58,6 +58,7 @@ namespace SolsticeGE {
 			bgfx::TextureHandle texHandle;
 
 			unsigned char* texData;
+			float* texDataFloat;
 
 			bgfx::TextureInfo texInfo;
 
@@ -77,7 +78,8 @@ namespace SolsticeGE {
 		std::string m_assetsRoot;
 
 		std::weak_ptr<Mesh> loadMesh(const std::string& fileName);
-		std::weak_ptr<Texture> loadTexture(const std::string& fileName);
+		std::weak_ptr<Texture> loadTexture2D(const std::string& fileName);
+		std::weak_ptr<Texture> loadTextureCube(const std::string& fileName);
 
 		std::unordered_map<std::string, std::shared_ptr<Mesh>> mp_meshes;
 		std::unordered_map<std::string, std::shared_ptr<Texture>> mp_textures;

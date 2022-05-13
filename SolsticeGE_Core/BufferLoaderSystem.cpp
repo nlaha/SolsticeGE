@@ -83,13 +83,26 @@ void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
 
 			bgfx::TextureInfo texInfo = texAsset.lock()->texInfo;
 
-			const bgfx::Memory* mem = bgfx::makeRef(
-				texAsset.lock()->texData, texInfo.storageSize
-			);
+			// load cubemaps
+			if (texInfo.cubeMap) {
+				const bgfx::Memory* mem = bgfx::makeRef(
+					texAsset.lock()->texDataFloat, texInfo.storageSize
+				);
 
-			texAsset.lock()->texHandle = bgfx::createTexture2D(
-				texInfo.width, texInfo.height,
-				false, 1, texInfo.format, BGFX_TEXTURE_NONE, mem);
+				texAsset.lock()->texHandle = bgfx::createTextureCube(
+					texInfo.width, false, 1, 
+					texInfo.format, BGFX_TEXTURE_NONE, mem);
+			}
+			// load 2d textures
+			else {
+				const bgfx::Memory* mem = bgfx::makeRef(
+					texAsset.lock()->texData, texInfo.storageSize
+				);
+
+				texAsset.lock()->texHandle = bgfx::createTexture2D(
+					texInfo.height, texInfo.height,
+					false, 1, texInfo.format, BGFX_TEXTURE_NONE, mem);
+			}
 
 			texAsset.lock()->bufferLoaded = true;
 		}

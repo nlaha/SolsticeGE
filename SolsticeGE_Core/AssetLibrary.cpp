@@ -67,13 +67,17 @@ bool AssetLibrary::loadAssets(const std::string& assetDir)
 				loadMesh(entry.path().string());
 			}
 
+			// load standalone 2d textures
 			if (entry.path().extension() == ".jpg")
 			{			
-				loadTexture(entry.path().string());
-
-				// load standalone textures
+				loadTexture2D(entry.path().string());
 			}
-			// load skyboxes
+
+			// load cubemaps
+			if (entry.path().extension() == ".hdr")
+			{
+				loadTextureCube(entry.path().string());
+			}
 
 			// etc...
 		}
@@ -194,7 +198,13 @@ std::weak_ptr<AssetLibrary::Mesh> AssetLibrary::loadMesh(const std::string& file
 	return mesh;
 }
 
-std::weak_ptr<AssetLibrary::Texture> AssetLibrary::loadTexture(const std::string& fileName)
+/// <summary>
+/// Loads a 2d texture into memory 
+/// (not GPU memory, that's done later)
+/// </summary>
+/// <param name="fileName"></param>
+/// <returns></returns>
+std::weak_ptr<AssetLibrary::Texture> AssetLibrary::loadTexture2D(const std::string& fileName)
 {
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 	texture->bufferLoaded = false;
@@ -210,6 +220,40 @@ std::weak_ptr<AssetLibrary::Texture> AssetLibrary::loadTexture(const std::string
 	texInfo.height = height;
 	texInfo.storageSize = (width * height) * 4;
 	texInfo.format = bgfx::TextureFormat::RGBA8;
+	texInfo.cubeMap = false;
+
+	texture->texInfo = texInfo;
+
+	this->mp_textures.emplace(fileName, texture);
+
+	spdlog::info("Texture loaded from {} with channels {}", fileName, nrComponents);
+
+	return texture;
+}
+
+/// <summary>
+/// Loads a cubemap texture into memory
+/// again, just normal memory, not the GPU
+/// </summary>
+/// <param name="fileName"></param>
+/// <returns></returns>
+std::weak_ptr<AssetLibrary::Texture> AssetLibrary::loadTextureCube(const std::string& fileName)
+{
+	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+	texture->bufferLoaded = false;
+
+	int width, height, nrComponents;
+	float* data = stbi_loadf(fileName.c_str(), &width, &height, &nrComponents, STBI_rgb_alpha);
+
+	texture->texDataFloat = data;
+
+	bgfx::TextureInfo texInfo;
+
+	texInfo.width = width;
+	texInfo.height = height;
+	texInfo.storageSize = (width * height) * 4;
+	texInfo.format = bgfx::TextureFormat::RGBA16F;
+	texInfo.cubeMap = false;
 
 	texture->texInfo = texInfo;
 
