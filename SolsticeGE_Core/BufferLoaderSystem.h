@@ -9,8 +9,14 @@ namespace SolsticeGE {
     class BufferLoaderSystem :
         public System
     {
+    public:
+        BufferLoaderSystem();
+
         void update(entt::registry& registry);
 
-        void moveTextureToGPU(const std::string& texture);
+        void moveTextureToGPU(const ASSET_ID& texture);
+
+    private:
+        int m_texCount;
     };
 }

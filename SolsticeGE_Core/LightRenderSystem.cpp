@@ -25,7 +25,7 @@ void LightRenderSystem::update(entt::registry& registry)
 		// cull lights
 		AABB aabb;
 		aabb.translate(transform.pos);
-		aabb.scale(glm::vec3(light.outer), transform.pos);
+		aabb.scale(glm::vec3(light.params[0]), transform.pos);
 
 		const glm::vec3 box[8] =
 		{
@@ -81,17 +81,14 @@ void LightRenderSystem::update(entt::registry& registry)
 				EngineWrapper::shaderSamplers.at("position"),
 				bgfx::getTexture(EngineWrapper::gbuffer, 2));
 			bgfx::setTexture(3,
-				EngineWrapper::shaderSamplers.at("ao"),
+				EngineWrapper::shaderSamplers.at("ao_metal_rough"),
 				bgfx::getTexture(EngineWrapper::gbuffer, 3));
 			bgfx::setTexture(4,
-				EngineWrapper::shaderSamplers.at("metalRoughness"),
+				EngineWrapper::shaderSamplers.at("emissive"),
 				bgfx::getTexture(EngineWrapper::gbuffer, 4));
 			bgfx::setTexture(5,
-				EngineWrapper::shaderSamplers.at("emissive"),
-				bgfx::getTexture(EngineWrapper::gbuffer, 5));
-			bgfx::setTexture(6,
 				EngineWrapper::shaderSamplers.at("depth"),
-				bgfx::getTexture(EngineWrapper::gbuffer, 6));
+				bgfx::getTexture(EngineWrapper::gbuffer, 5));
 
 			bgfx::setState(0
 				| BGFX_STATE_WRITE_RGB

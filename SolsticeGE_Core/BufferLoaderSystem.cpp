@@ -1,7 +1,13 @@
 #include "BufferLoaderSystem.h"
 #include "EngineWrapper.h"
+#include "stb_image.h"
 
 using namespace SolsticeGE;
+
+BufferLoaderSystem::BufferLoaderSystem()
+{
+	this->m_texCount = 0;
+}
 
 void BufferLoaderSystem::update(entt::registry& registry)
 {
@@ -24,6 +30,7 @@ void BufferLoaderSystem::update(entt::registry& registry)
 		}
 
 		if (!meshAsset.lock()->bufferLoaded) {
+			spdlog::info("Loading GPU data for mesh {}", mesh.assetId);
 			// Create static vertex buffer.
 			meshAsset.lock()->vbuf = bgfx::createVertexBuffer(
 				// Static data can be passed with bgfx::makeRef
@@ -48,24 +55,37 @@ void BufferLoaderSystem::update(entt::registry& registry)
 		auto& material = material_view.get<c_material>(entity);
 
 		// load diffuse texture
-		moveTextureToGPU(material.diffuse_tex);
+		if (material.diffuse_tex != ASSET_ID_INVALID)
+			moveTextureToGPU(material.diffuse_tex);
 
 		// load normal texture
-		moveTextureToGPU(material.normal_tex);
+		if (material.normal_tex != ASSET_ID_INVALID)
+			moveTextureToGPU(material.normal_tex);
 
 		// load ao texture
-		moveTextureToGPU(material.ao_tex);
+		if (material.ao_tex != ASSET_ID_INVALID)
+			moveTextureToGPU(material.ao_tex);
 
-		// load metalness/roughness texture
-		moveTextureToGPU(material.metalRoughness_tex);
+		// load metalness texture
+		if (material.metal_tex != ASSET_ID_INVALID)
+			moveTextureToGPU(material.metal_tex);
+
+		// load roughness texture
+		if (material.roughness_tex != ASSET_ID_INVALID)
+			moveTextureToGPU(material.roughness_tex);
 
 		// load emissive texture
-		moveTextureToGPU(material.emissive_tex);
+		if (material.emissive_tex != ASSET_ID_INVALID)
+			moveTextureToGPU(material.emissive_tex);
 	}
 }
 
-static int texCount = 0;
-void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
+static void imageReleaseFunction(void* ptr)
+{
+	stbi_image_free(ptr);
+}
+
+void BufferLoaderSystem::moveTextureToGPU(const ASSET_ID& texture)
 {
 
 	std::weak_ptr<AssetLibrary::Texture> texAsset;
@@ -74,8 +94,8 @@ void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
 		if (!texAsset.lock()->bufferLoaded) {
 
 			std::stringstream samplerName;
-			samplerName << "sampler" << texCount;
-			texCount++;
+			samplerName << "sampler" << m_texCount;
+			m_texCount++;
 
 			texAsset.lock()->sampler = bgfx::createUniform(
 				samplerName.str().c_str(),
@@ -86,7 +106,8 @@ void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
 			// load cubemaps
 			if (texInfo.cubeMap) {
 				const bgfx::Memory* mem = bgfx::makeRef(
-					texAsset.lock()->texDataFloat, texInfo.storageSize
+					texAsset.lock()->texDataFloat, texInfo.storageSize,
+					(bgfx::ReleaseFn)imageReleaseFunction
 				);
 
 				texAsset.lock()->texHandle = bgfx::createTextureCube(
@@ -96,7 +117,8 @@ void BufferLoaderSystem::moveTextureToGPU(const std::string& texture)
 			// load 2d textures
 			else {
 				const bgfx::Memory* mem = bgfx::makeRef(
-					texAsset.lock()->texData, texInfo.storageSize
+					texAsset.lock()->texData, texInfo.storageSize,
+					(bgfx::ReleaseFn)imageReleaseFunction
 				);
 
 				texAsset.lock()->texHandle = bgfx::createTexture2D(

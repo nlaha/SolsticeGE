@@ -57,6 +57,9 @@
     <ClCompile Include="AABB.cpp">
       <Filter>Source Files\ThirdParty</Filter>
     </ClCompile>
+    <ClCompile Include="SceneSpawnerSystem.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\vcpkg.json">
@@ -96,6 +99,9 @@
     </ClInclude>
     <ClInclude Include="AABB.hpp">
       <Filter>Header Files\ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneSpawnerSystem.h">
+      <Filter>Header Files\Systems</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

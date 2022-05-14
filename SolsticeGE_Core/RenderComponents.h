@@ -39,13 +39,18 @@ namespace SolsticeGE {
 		glm::vec3 scale;
 	};
 
+	struct c_scene {
+		std::string sceneName;
+		bool isLoaded;
+	};
+
 	/// <summary>
 	/// Holds mesh data
 	/// Note: this doesn't
 	/// contain shader info
 	/// </summary>
 	struct c_mesh {
-		std::string assetId;
+		ASSET_ID assetId;
 	};
 
 	/// <summary>
@@ -64,11 +69,14 @@ namespace SolsticeGE {
 	/// textures, parameters, etc.
 	/// </summary>
 	struct c_material {
-		std::string diffuse_tex;
-		std::string normal_tex;
-		std::string ao_tex;
-		std::string metalRoughness_tex;
-		std::string emissive_tex;
+		ASSET_ID diffuse_tex;
+		ASSET_ID normal_tex;
+		ASSET_ID ao_tex;
+		ASSET_ID metal_tex;
+		ASSET_ID roughness_tex;
+		ASSET_ID emissive_tex;
+
+		bool isPacked;
 	};
 
 	/// <summary>
@@ -86,8 +94,6 @@ namespace SolsticeGE {
 		*/
 		glm::vec3 params;
 		glm::vec3 color;
-		float outer;
-		float inner;
 	};
 
 	/// <summary>

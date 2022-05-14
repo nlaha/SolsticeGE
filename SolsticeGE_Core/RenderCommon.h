@@ -6,6 +6,10 @@
 
 namespace SolsticeGE {
 
+	typedef std::uint16_t ASSET_ID;
+
+	#define ASSET_ID_INVALID ASSET_ID(65535)
+	
 	struct RenderPass {
 		bgfx::ViewId viewId;
 		bool fullscreenOrtho;

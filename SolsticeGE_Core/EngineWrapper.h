@@ -24,10 +24,12 @@
 #include "BufferLoaderSystem.h"
 #include "LightRenderSystem.h"
 
+#include "SceneSpawnerSystem.h"
+
 namespace SolsticeGE {
 
 	constexpr bgfx::ViewId kRenderPassGeometry = 0;
-	constexpr bgfx::ViewId kRenderPassClearUav = 1;
+	constexpr bgfx::ViewId kRenderPassEnvironment = 1;
 	constexpr bgfx::ViewId kRenderPassLight = 2;
 	constexpr bgfx::ViewId kRenderPassCombine = 3;
 
@@ -66,12 +68,20 @@ namespace SolsticeGE {
 			float _texelHalf, bool _originBottomLeft, 
 			float _width = 1.0f, float _height = 1.0f);
 
+
 		static bgfx::FrameBufferHandle gbuffer;
 		static float texelHalf;
 		static const bgfx::Caps* renderCaps;
 		static bgfx::ProgramHandle lightProgram;
 
 		static entt::entity activeCamera;
+
+		// mesh shading
+		static bgfx::ShaderHandle vs_mesh;
+		static bgfx::ShaderHandle fs_mesh;
+		static bgfx::ProgramHandle prog_mesh;
+
+		static int gbufferDebugMode;
 
 	private:
 		GLFWwindow* mp_window;

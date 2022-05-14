@@ -8,10 +8,9 @@ SAMPLER2D(s_albedo,  0);
 SAMPLER2D(s_normal, 1);
 SAMPLER2D(s_position, 2);
 
-SAMPLER2D(s_ao, 3);
-SAMPLER2D(s_metalRoughness, 4);
-SAMPLER2D(s_emissive, 5);
-SAMPLER2D(s_depth,  6);
+SAMPLER2D(s_ao_metal_rough, 3);
+SAMPLER2D(s_emissive, 4);
+SAMPLER2D(s_depth,  5);
 
 #define PI 3.141592653589793
 
@@ -63,17 +62,17 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 void main()
 {	
 	// ========= Textures ========
-	vec3 albedo         = toLinear(texture2D(s_albedo, v_texcoord0).rgb);
-	vec3 metalRoughness = texture2D(s_metalRoughness, v_texcoord0).rgb;
-	vec3 position       = convertRGB2XYZ(texture2D(s_position, v_texcoord0).rgb);
+	vec4 albedo         = toLinear(texture2D(s_albedo, v_texcoord0));
+	vec3 aoMetalRough = texture2D(s_ao_metal_rough, v_texcoord0).rgb;
+	vec3 position       = texture2D(s_position, v_texcoord0).rgb;
 	vec3 normal         = decodeNormalOctahedron(texture2D(s_normal, v_texcoord0).rg);
 	vec4 depth          = texture2D(s_depth, v_texcoord0);
 	
 	// ========= PBR Data ========
 	vec3 emissive   = toLinear(texture2D(s_emissive, v_texcoord0).rgb);
-	float ao        = texture2D(s_ao, v_texcoord0).r;
-	float metallic  = metalRoughness.b;
-	float roughness = metalRoughness.g;
+	float ao        = aoMetalRough.r;
+	float metallic  = aoMetalRough.g;
+	float roughness = aoMetalRough.b;
 
 	// ========= Lighting =========
 	vec3 lighting = vec3(0.0, 0.0, 0.0);
@@ -87,24 +86,26 @@ void main()
 	vec3 radiance = vec3(0.0, 0.0, 0.0);
 
 	// light type
-	if (u_lightTypeParams.x == 0.0) {
+	if (u_lightTypeParams[0] == 0.0) {
 		// Directional light
 
 		radiance = u_lightColor;
 
-	} else if (u_lightTypeParams.x == 1.0) {
+	} else if (u_lightTypeParams[0] == 1.0) {
 		// Point light
 
 		// attenuation
-		float distance    = length(lightDir);
-		float attenuation = 1.0 - smoothstep(u_lightTypeParams[2], 1.0, distance / u_lightTypeParams[1]);
-		radiance     = u_lightColor * attenuation; 
+		float distance = length(u_viewPos - position);
+		float radius = u_lightTypeParams[1];
+		float attenuation = clamp(1.0 - distance*distance/(radius*radius), 0.0, 1.0); 
+		attenuation *= attenuation;
+		radiance = u_lightColor * attenuation; 
 
 	}
 
 	// BRDF math shit
 	vec3 F0 = vec3(0.04, 0.04, 0.04); 
-	F0      = mix(F0, albedo, metallic);
+	F0      = mix(F0, albedo.rgb, metallic);
 	vec3 F  = fresnelSchlick(max(dot(lightDirH, viewDir), 0.0), F0);
 
 	float NDF = DistributionGGX(normal, lightDirH, roughness);       
@@ -120,10 +121,10 @@ void main()
 	kD *= 1.0 - metallic;	
   
     float NdotL = max(dot(normal, lightDir), 0.0);        
-    lighting += (kD * albedo / PI + specular) * radiance * NdotL;
+    lighting += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
 
-	vec3 ambient = vec3(0.1, 0.1, 0.1) * albedo * ao;
-	vec3 color   = ambient + lighting + emissive;  
+	vec3 ambient = vec3(0.05, 0.05, 0.05) * albedo.rgb * ao;
+	vec3 color   = ambient + lighting + (emissive * 25.0);  
 
-	gl_FragColor = vec4(color, 1.0);
+	gl_FragColor = vec4(color, albedo.a);
 }

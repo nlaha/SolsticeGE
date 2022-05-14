@@ -167,6 +167,7 @@
     <ClCompile Include="MeshRenderSystem.cpp" />
     <ClCompile Include="LightRenderSystem.cpp" />
     <ClCompile Include="RenderCommon.cpp" />
+    <ClCompile Include="SceneSpawnerSystem.cpp" />
     <ClCompile Include="System.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -183,6 +184,7 @@
     <ClInclude Include="LightRenderSystem.h" />
     <ClInclude Include="RenderCommon.h" />
     <ClInclude Include="RenderComponents.h" />
+    <ClInclude Include="SceneSpawnerSystem.h" />
     <ClInclude Include="System.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

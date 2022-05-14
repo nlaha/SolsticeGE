@@ -38,13 +38,12 @@ void MeshRenderSystem::update(entt::registry& registry)
 		}
 
 		if (meshAsset.lock() != nullptr && meshAsset.lock()->bufferLoaded) {
-
 			glm::mat4 modelMatrix;
 
 			// compute matrix;
 			modelMatrix = glm::toMat4(transform.rot);
-			angle += 0.000001f * EngineWrapper::dt;
-			modelMatrix = glm::rotate(modelMatrix, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+			//angle += 0.000001f * EngineWrapper::dt;
+			//modelMatrix = glm::rotate(modelMatrix, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 
 			modelMatrix = glm::translate(modelMatrix, transform.pos);
 			modelMatrix = glm::scale(modelMatrix, transform.scale);
@@ -59,19 +58,31 @@ void MeshRenderSystem::update(entt::registry& registry)
 			bgfx::setUniform(EngineWrapper::shaderUniforms.at("normalMatrix"), &normalMatrix[0]);
 
 			// render diffuse map
-			setTexture(material.diffuse_tex, 0);
+			if (material.diffuse_tex != ASSET_ID_INVALID)
+				setTexture(material.diffuse_tex, 0);
 
 			// render normal map
-			setTexture(material.normal_tex, 1);
+			if (material.normal_tex != ASSET_ID_INVALID)
+				setTexture(material.normal_tex, 1);
+
+			bgfx::setUniform(EngineWrapper::shaderUniforms.at("isPacked"), 
+				&glm::vec4(material.isPacked ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f)[0]);
 
 			// render ao map
-			setTexture(material.ao_tex, 2);
+			if (material.ao_tex != ASSET_ID_INVALID)
+				setTexture(material.ao_tex, 2);
 
-			// render metalness/roughness map
-			setTexture(material.metalRoughness_tex, 3);
+			// render metalness map
+			if (material.metal_tex != ASSET_ID_INVALID)
+				setTexture(material.metal_tex, 3);
+
+			// render roughness map
+			if (material.roughness_tex != ASSET_ID_INVALID)
+				setTexture(material.roughness_tex, 4);
 
 			// render emissive map
-			setTexture(material.emissive_tex, 4);
+			if (material.emissive_tex != ASSET_ID_INVALID)
+				setTexture(material.emissive_tex, 5);
 
 			bgfx::setState(state);
 
@@ -80,7 +91,7 @@ void MeshRenderSystem::update(entt::registry& registry)
 	}
 }
 
-void MeshRenderSystem::setTexture(const std::string& texture, int shaderSlot)
+void MeshRenderSystem::setTexture(const ASSET_ID& texture, int shaderSlot)
 {
 	std::weak_ptr<AssetLibrary::Texture> texAsset;
 	if (EngineWrapper::assetLib.getTexture(texture, texAsset))

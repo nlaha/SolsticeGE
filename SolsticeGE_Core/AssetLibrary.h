@@ -9,6 +9,7 @@
 #include <glm/vec3.hpp>
 #include <glm/glm.hpp>
 #include <string>
+#include <regex>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -36,6 +37,12 @@ namespace SolsticeGE {
 		// asset types
 		// V==================V
 
+		struct Scene {
+			std::vector<ASSET_ID> meshes;
+			std::vector<ASSET_ID> materials;
+			std::vector<ASSET_ID> textures;
+		};
+
 		struct Mesh {
 
 			// meshes can be "loaded"
@@ -46,6 +53,9 @@ namespace SolsticeGE {
 
 			bgfx::VertexBufferHandle vbuf;
 			bgfx::IndexBufferHandle ibuf;
+
+			// the material of the mesh
+			ASSET_ID material;
 
 			std::vector<BasicVertex> vdata;
 			std::vector<uint16_t> idata;
@@ -65,24 +75,45 @@ namespace SolsticeGE {
 			bgfx::UniformHandle sampler;
 		};
 
-		bool getMesh(const std::string& name, std::weak_ptr<Mesh>& mesh);
-		bool getTexture(const std::string& name, std::weak_ptr<Texture>& texture);
+		struct Material {
+			ASSET_ID diffuse_tex;
+			ASSET_ID normal_tex;
+			ASSET_ID ao_tex;
+			ASSET_ID metal_tex;
+			ASSET_ID roughness_tex;
+			ASSET_ID emissive_tex;
+
+			bool isPacked;
+		};
+
+		bool getMesh(const ASSET_ID& id, std::weak_ptr<Mesh>& mesh);
+		bool getTexture(const ASSET_ID& id, std::weak_ptr<Texture>& texture);
+		bool getMaterial(const ASSET_ID& id, std::weak_ptr<Material>& material);
+		bool getScene(const std::string& name, std::weak_ptr<Scene>& scene);
 
 		bool loadAssets(const std::string& assetDir);
 		
 	private:
 
-		std::uint16_t m_meshCount;
-		std::uint16_t m_textureCount;
+		ASSET_ID m_meshCount;
+		ASSET_ID m_textureCount;
+		ASSET_ID m_materialCount;
 
 		std::string m_assetsRoot;
 
-		std::weak_ptr<Mesh> loadMesh(const std::string& fileName);
-		std::weak_ptr<Texture> loadTexture2D(const std::string& fileName);
-		std::weak_ptr<Texture> loadTextureCube(const std::string& fileName);
+		void loadScene(const std::string& fileName);
+		ASSET_ID loadMesh(aiMesh* inMesh, std::shared_ptr<Scene>& scene);
+		ASSET_ID loadTexture2D(aiTexture* inTex);
+		ASSET_ID loadTexture2D(const std::string& fileName);
+		ASSET_ID loadTextureCube(const std::string& fileName);
+		ASSET_ID loadMaterial(aiMaterial* inMat, std::shared_ptr<Scene>& scene);
 
-		std::unordered_map<std::string, std::shared_ptr<Mesh>> mp_meshes;
-		std::unordered_map<std::string, std::shared_ptr<Texture>> mp_textures;
+		std::unordered_map<ASSET_ID, std::shared_ptr<Mesh>> mp_meshes;
+		std::unordered_map<ASSET_ID, std::shared_ptr<Texture>> mp_textures;
+		std::unordered_map<ASSET_ID, std::shared_ptr<Material>> mp_materials;
+
+		// string map for easy use
+		std::unordered_map<std::string, std::shared_ptr<Scene>> mp_scenes;
 
 	};
 }
