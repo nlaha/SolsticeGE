@@ -47,7 +47,8 @@ void SceneSpawnerSystem::update(entt::registry& registry)
 								materialAsset.lock()->metal_tex,
 								materialAsset.lock()->roughness_tex,
 								materialAsset.lock()->emissive_tex,
-								materialAsset.lock()->isPacked
+								materialAsset.lock()->isPacked,
+								false
 							);
 						}
 					}

@@ -163,12 +163,16 @@
     <ClCompile Include="BufferLoaderSystem.cpp" />
     <ClCompile Include="CameraRenderSystem.cpp" />
     <ClCompile Include="EngineWrapper.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MeshRenderSystem.cpp" />
     <ClCompile Include="LightRenderSystem.cpp" />
+    <ClCompile Include="PlayerControllerSystem.cpp" />
     <ClCompile Include="RenderCommon.cpp" />
+    <ClCompile Include="SceneHierarchySystem.cpp" />
     <ClCompile Include="SceneSpawnerSystem.cpp" />
     <ClCompile Include="System.cpp" />
+    <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
@@ -180,12 +184,17 @@
     <ClInclude Include="BufferLoaderSystem.h" />
     <ClInclude Include="CameraRenderSystem.h" />
     <ClInclude Include="EngineWrapper.h" />
+    <ClInclude Include="GameplayComponents.h" />
+    <ClInclude Include="InputManager.h" />
     <ClInclude Include="MeshRenderSystem.h" />
     <ClInclude Include="LightRenderSystem.h" />
+    <ClInclude Include="PlayerControllerSystem.h" />
     <ClInclude Include="RenderCommon.h" />
     <ClInclude Include="RenderComponents.h" />
+    <ClInclude Include="SceneHierarchySystem.h" />
     <ClInclude Include="SceneSpawnerSystem.h" />
     <ClInclude Include="System.h" />
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

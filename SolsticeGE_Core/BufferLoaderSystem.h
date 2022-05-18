@@ -14,9 +14,12 @@ namespace SolsticeGE {
 
         void update(entt::registry& registry);
 
+        void moveCubemapToGPU(const ASSET_ID& texture);
+
         void moveTextureToGPU(const ASSET_ID& texture);
 
     private:
         int m_texCount;
+        int m_cubemapCount;
     };
 }

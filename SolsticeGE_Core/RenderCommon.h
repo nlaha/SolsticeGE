@@ -6,9 +6,9 @@
 
 namespace SolsticeGE {
 
-	typedef std::uint16_t ASSET_ID;
+	typedef std::uint32_t ASSET_ID;
 
-	#define ASSET_ID_INVALID ASSET_ID(65535)
+	#define ASSET_ID_INVALID ASSET_ID(UINT32_MAX)
 	
 	struct RenderPass {
 		bgfx::ViewId viewId;

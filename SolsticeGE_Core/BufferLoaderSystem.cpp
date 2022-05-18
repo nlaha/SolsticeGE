@@ -7,6 +7,7 @@ using namespace SolsticeGE;
 BufferLoaderSystem::BufferLoaderSystem()
 {
 	this->m_texCount = 0;
+	this->m_cubemapCount = 0;
 }
 
 void BufferLoaderSystem::update(entt::registry& registry)
@@ -34,7 +35,6 @@ void BufferLoaderSystem::update(entt::registry& registry)
 			// Create static vertex buffer.
 			meshAsset.lock()->vbuf = bgfx::createVertexBuffer(
 				// Static data can be passed with bgfx::makeRef
-				//bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices))
 				bgfx::makeRef(meshAsset.lock()->vdata.data(), meshAsset.lock()->vdata.size() * sizeof(meshAsset.lock()->vdata[0]))
 				, BasicVertex::ms_layout
 			);
@@ -42,7 +42,6 @@ void BufferLoaderSystem::update(entt::registry& registry)
 			// Create static index buffer for triangle list rendering.
 			meshAsset.lock()->ibuf = bgfx::createIndexBuffer(
 				// Static data can be passed with bgfx::makeRef
-				//bgfx::makeRef(s_cubeTriList, sizeof(s_cubeTriList))
 				bgfx::makeRef(meshAsset.lock()->idata.data(), meshAsset.lock()->idata.size() * sizeof(meshAsset.lock()->idata[0]))
 			);
 
@@ -54,29 +53,38 @@ void BufferLoaderSystem::update(entt::registry& registry)
 	{
 		auto& material = material_view.get<c_material>(entity);
 
-		// load diffuse texture
-		if (material.diffuse_tex != ASSET_ID_INVALID)
-			moveTextureToGPU(material.diffuse_tex);
+		if (!material.bufferLoaded) {
+			// load diffuse texture
+			if (material.diffuse_tex != ASSET_ID_INVALID)
+				moveTextureToGPU(material.diffuse_tex);
 
-		// load normal texture
-		if (material.normal_tex != ASSET_ID_INVALID)
-			moveTextureToGPU(material.normal_tex);
+			// load normal texture
+			if (material.normal_tex != ASSET_ID_INVALID)
+				moveTextureToGPU(material.normal_tex);
 
-		// load ao texture
-		if (material.ao_tex != ASSET_ID_INVALID)
-			moveTextureToGPU(material.ao_tex);
+			// load ao texture
+			if (material.ao_tex != ASSET_ID_INVALID)
+				moveTextureToGPU(material.ao_tex);
 
-		// load metalness texture
-		if (material.metal_tex != ASSET_ID_INVALID)
-			moveTextureToGPU(material.metal_tex);
+			// load metalness texture
+			if (material.metal_tex != ASSET_ID_INVALID)
+				moveTextureToGPU(material.metal_tex);
 
-		// load roughness texture
-		if (material.roughness_tex != ASSET_ID_INVALID)
-			moveTextureToGPU(material.roughness_tex);
+			// load roughness texture
+			if (material.roughness_tex != ASSET_ID_INVALID)
+				moveTextureToGPU(material.roughness_tex);
 
-		// load emissive texture
-		if (material.emissive_tex != ASSET_ID_INVALID)
-			moveTextureToGPU(material.emissive_tex);
+			// load emissive texture
+			if (material.emissive_tex != ASSET_ID_INVALID)
+				moveTextureToGPU(material.emissive_tex);
+
+			material.bufferLoaded = true;
+		}
+	}
+
+	for (size_t i = 0; i < EngineWrapper::assetLib.getCubemaps().size(); i++)
+	{
+		moveCubemapToGPU(i);
 	}
 }
 
@@ -85,9 +93,40 @@ static void imageReleaseFunction(void* ptr)
 	stbi_image_free(ptr);
 }
 
+void BufferLoaderSystem::moveCubemapToGPU(const ASSET_ID& texture)
+{
+	std::weak_ptr<AssetLibrary::Texture> texAsset;
+	if (EngineWrapper::assetLib.getCubemap(texture, texAsset))
+	{
+		if (!texAsset.lock()->bufferLoaded) {
+			std::stringstream samplerName;
+			samplerName << "cube_sampler" << m_cubemapCount;
+			m_cubemapCount++;
+
+			texAsset.lock()->sampler = bgfx::createUniform(
+				samplerName.str().c_str(),
+				bgfx::UniformType::Sampler);
+
+			bgfx::TextureInfo texInfo = texAsset.lock()->texInfo;
+
+			// load cubemaps
+			const bgfx::Memory* mem = bgfx::makeRef(
+				texAsset.lock()->texDataFloat, texInfo.storageSize,
+				(bgfx::ReleaseFn)imageReleaseFunction
+			);
+
+			// problem with size
+			texAsset.lock()->texHandle = bgfx::createTexture2D(
+				texInfo.width, texInfo.height,
+				false, 1, texInfo.format, BGFX_TEXTURE_NONE, mem);
+
+			texAsset.lock()->bufferLoaded = true;
+		}
+	}
+}
+
 void BufferLoaderSystem::moveTextureToGPU(const ASSET_ID& texture)
 {
-
 	std::weak_ptr<AssetLibrary::Texture> texAsset;
 	if (EngineWrapper::assetLib.getTexture(texture, texAsset))
 	{
@@ -103,28 +142,15 @@ void BufferLoaderSystem::moveTextureToGPU(const ASSET_ID& texture)
 
 			bgfx::TextureInfo texInfo = texAsset.lock()->texInfo;
 
-			// load cubemaps
-			if (texInfo.cubeMap) {
-				const bgfx::Memory* mem = bgfx::makeRef(
-					texAsset.lock()->texDataFloat, texInfo.storageSize,
-					(bgfx::ReleaseFn)imageReleaseFunction
-				);
-
-				texAsset.lock()->texHandle = bgfx::createTextureCube(
-					texInfo.width, false, 1, 
-					texInfo.format, BGFX_TEXTURE_NONE, mem);
-			}
 			// load 2d textures
-			else {
-				const bgfx::Memory* mem = bgfx::makeRef(
-					texAsset.lock()->texData, texInfo.storageSize,
-					(bgfx::ReleaseFn)imageReleaseFunction
-				);
+			const bgfx::Memory* mem = bgfx::makeRef(
+				texAsset.lock()->texData, texInfo.storageSize,
+				(bgfx::ReleaseFn)imageReleaseFunction
+			);
 
-				texAsset.lock()->texHandle = bgfx::createTexture2D(
-					texInfo.height, texInfo.height,
-					false, 1, texInfo.format, BGFX_TEXTURE_NONE, mem);
-			}
+			texAsset.lock()->texHandle = bgfx::createTexture2D(
+				texInfo.width, texInfo.height,
+				false, 1, texInfo.format, BGFX_TEXTURE_NONE, mem);
 
 			texAsset.lock()->bufferLoaded = true;
 		}

@@ -31,6 +31,15 @@ entt::entity EngineWrapper::activeCamera;
 
 int EngineWrapper::gbufferDebugMode = -1;
 
+MouseData EngineWrapper::userInput = {
+    0.0, 0.0,
+    EngineWrapper::videoSettings.windowWidth / 2.0f,
+    EngineWrapper::videoSettings.windowHeight / 2.0f,
+    -90.0f, 0.0f,
+    true,
+    glm::vec3(0.0, 0.0, -1.0)
+};
+
 /// <summary>
 /// GLFW Error callback, called when there's a GLFW error
 /// </summary>
@@ -52,6 +61,12 @@ static void glfwErrorCallback(int error, const char *description)
 /// <param name="mods"></param>
 static void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
+    if (action == GLFW_PRESS)
+        InputManager::recieveBtnDown(key);
+
+    if (action == GLFW_RELEASE)
+        InputManager::recieveBtnUp(key);
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 
@@ -84,6 +99,41 @@ static void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int actio
     {
         bgfx::setDebug(BGFX_DEBUG_NONE);
     }
+}
+
+static void glfwMouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (EngineWrapper::userInput.firstMouse)
+    {
+        EngineWrapper::userInput.mouseLastX = xpos;
+        EngineWrapper::userInput.mouseLastY = ypos;
+        EngineWrapper::userInput.firstMouse = false;
+    }
+
+    float xoffset = xpos - EngineWrapper::userInput.mouseLastX;
+    float yoffset = EngineWrapper::userInput.mouseLastY - ypos;
+    EngineWrapper::userInput.mouseLastX = xpos;
+    EngineWrapper::userInput.mouseLastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    EngineWrapper::userInput.yaw += xoffset;
+    EngineWrapper::userInput.pitch += yoffset;
+
+    if (EngineWrapper::userInput.pitch > 89.0f)
+        EngineWrapper::userInput.pitch = 89.0f;
+    if (EngineWrapper::userInput.pitch < -89.0f)
+        EngineWrapper::userInput.pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(EngineWrapper::userInput.yaw)) 
+        * cos(glm::radians(EngineWrapper::userInput.pitch));
+    direction.y = sin(glm::radians(EngineWrapper::userInput.pitch));
+    direction.z = sin(glm::radians(EngineWrapper::userInput.yaw)) 
+        * cos(glm::radians(EngineWrapper::userInput.pitch));
+    EngineWrapper::userInput.cameraFront = glm::normalize(direction);
 }
 
 /// <summary>
@@ -121,12 +171,15 @@ bool EngineWrapper::init()
     }
 
     // Initialize game systems
+    m_gameSystems.push_back(std::move(std::make_unique<SceneSpawnerSystem>()));
+    m_gameSystems.push_back(std::move(std::make_unique<PlayerControllerSystem>()));
+    m_gameSystems.push_back(std::move(std::make_unique<SceneHierarchySystem>()));
+
+    // Initialize render systems
     m_renderSystems.push_back(std::move(std::make_unique<CameraRenderSystem>()));
     m_renderSystems.push_back(std::move(std::make_unique<BufferLoaderSystem>()));
     m_renderSystems.push_back(std::move(std::make_unique<MeshRenderSystem>()));
     m_renderSystems.push_back(std::move(std::make_unique<LightRenderSystem>()));
-
-    m_renderSystems.push_back(std::move(std::make_unique<SceneSpawnerSystem>()));
 
     return true;
 }
@@ -165,6 +218,12 @@ bool EngineWrapper::run()
     // set glfw key callback
     glfwSetKeyCallback(mp_window, glfwKeyCallback);
 
+    // hide cursor
+    glfwSetInputMode(mp_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // set glfw mouse callback
+    glfwSetCursorPosCallback(mp_window, glfwMouseCallback);
+
     // initialize bgfx
     bgfx::Init bgfxInit;
 #if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
@@ -199,50 +258,43 @@ bool EngineWrapper::run()
 
     // test some ECS
 
-    const auto entity = m_registry.create();
-    m_registry.emplace<c_scene>(entity, "assets\\scene.gltf", false);
-    m_registry.emplace<c_transform>(entity,
-        glm::vec3(-0.5f, 0.0, -0.1f),
-        glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
-        glm::vec3(1.0, 1.0, 1.0));
+    const auto player = m_registry.create();
+    m_registry.emplace<c_transform>(player,
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f));
+    m_registry.emplace<c_player>(player);
+    m_registry.emplace<c_camera>(player,
+        70.0f,
+        0.001f,
+        10000.0f,
+        glm::vec2(
+            videoSettings.windowWidth,
+            videoSettings.windowHeight),
+        std::vector<RenderPass>({
+            {kRenderPassGeometry, false},
+            {kRenderPassLight, true},
+            {kRenderPassCombine, true},
+            }));
 
-    //const auto entity2 = m_registry.create();
-    //m_registry.emplace<c_scene>(entity2, "assets\\DamagedHelmet.glb", false);
-    //m_registry.emplace<c_transform>(entity2,
-    //    glm::vec3(-3.0f, 0.0f, 0.0f),
-    //    glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
-    //    glm::vec3(1.0, 1.0, 1.0));
+    EngineWrapper::activeCamera = player;
+
+    const auto entity = m_registry.create();
+    m_registry.emplace<c_scene>(entity, "assets\\imc_spider_tank\\scene.gltf", false);
+    m_registry.emplace<c_transform>(entity,
+        glm::vec3(0.0f, 0.0f, -0.7f),
+        glm::vec3(glm::radians(90.0f), glm::radians(-90.0f), glm::radians(180.0f)),
+        glm::vec3(1.0f, 1.0f, 1.0f));
 
     const auto light = m_registry.create();
     m_registry.emplace<c_transform>(light,
-        glm::vec3(-0.2f, 0.2, 0.0),
-        glm::quat(glm::vec3(0, 0, 0)),
-        glm::vec3(1.0, 1.0, 1.0));
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f));
     m_registry.emplace<c_light>(light,
-        1.0f,
+        kLightDirectional,
         glm::vec3(500.0f, 0.0f, 0.0f),
-        glm::vec3(1.0, 1.0, 1.0));
-
-    // create camera
-    const auto camera = m_registry.create();
-    m_registry.emplace<c_camera>(camera,
-                                 70.0f,
-                                 0.001f,
-                                 10000.0f,
-                                 glm::vec2(
-                                     videoSettings.windowWidth,
-                                     videoSettings.windowHeight),
-                                 std::vector<RenderPass>({
-                                     {kRenderPassGeometry, false},
-                                     {kRenderPassLight, true},
-                                     {kRenderPassCombine, true},
-                                 }));
-
-    m_registry.emplace<c_transform>(camera,
-                                    glm::vec3(0.0, 0.0f, 0.0),
-                                    glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)),
-                                    glm::vec3(1.0, 1.0, 1.0));
-    activeCamera = camera;
+        glm::vec3(2.0f, 2.0f, 2.0f));
 
     // Set palette color for black
     bgfx::setPaletteColor(0, UINT32_C(0x00000000));
@@ -385,8 +437,7 @@ bool EngineWrapper::run()
     // main loop
     while (!glfwWindowShouldClose(mp_window))
     {
-
-        EngineWrapper::dt = bgfx::getStats()->cpuTimeFrame;
+        auto start = std::chrono::high_resolution_clock::now();
 
         glfwGetWindowSize(mp_window,
                           &videoSettings.windowWidth,
@@ -394,11 +445,35 @@ bool EngineWrapper::run()
 
         bgfx::touch(0);
 
+        // call update on game systems
+        for (std::unique_ptr<System>& sys : m_gameSystems)
+        {
+            sys->update(m_registry);
+        }
+
         // TODO: move to render thread (see bgfx docs)
         for (std::unique_ptr<System> &sys : m_renderSystems)
         {
             sys->update(m_registry);
         }
+
+        // equirectangular maps to cube textures
+        // TODO: figure this out, see link:
+        // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
+        //std::weak_ptr<AssetLibrary::Texture> env_cubemap;
+        //if (EngineWrapper::assetLib.getCubemap(0, env_cubemap)) {
+        //    bgfx::setTexture(0,
+        //        env_cubemap.lock()->sampler,
+        //        env_cubemap.lock()->texHandle);
+        //}
+
+        //bgfx::setState(0 | BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A);
+
+        //screenSpaceQuad(
+        //    videoSettings.windowWidth,
+        //    videoSettings.windowHeight,
+        //    texelHalf, renderCaps->originBottomLeft);
+        //bgfx::submit(kRenderPassEnvironment, m_envProgram);
 
         // combined pass
         if (EngineWrapper::gbufferDebugMode == -1) {
@@ -423,6 +498,11 @@ bool EngineWrapper::run()
         bgfx::frame();
 
         glfwPollEvents();
+
+        auto end = std::chrono::high_resolution_clock::now();
+        float dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0f;
+
+        EngineWrapper::dt = dt;
     }
 
     return true;

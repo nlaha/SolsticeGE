@@ -17,6 +17,8 @@
 
 #include "RenderCommon.h"
 
+namespace fs = std::filesystem;
+
 namespace SolsticeGE {
 
 	/// <summary>
@@ -88,8 +90,11 @@ namespace SolsticeGE {
 
 		bool getMesh(const ASSET_ID& id, std::weak_ptr<Mesh>& mesh);
 		bool getTexture(const ASSET_ID& id, std::weak_ptr<Texture>& texture);
+		bool getCubemap(const ASSET_ID& id, std::weak_ptr<Texture>& texture);
 		bool getMaterial(const ASSET_ID& id, std::weak_ptr<Material>& material);
 		bool getScene(const std::string& name, std::weak_ptr<Scene>& scene);
+
+		std::unordered_map<ASSET_ID, std::shared_ptr<Texture>> getCubemaps();
 
 		bool loadAssets(const std::string& assetDir);
 		
@@ -98,18 +103,20 @@ namespace SolsticeGE {
 		ASSET_ID m_meshCount;
 		ASSET_ID m_textureCount;
 		ASSET_ID m_materialCount;
+		ASSET_ID m_cubemapCount;
 
 		std::string m_assetsRoot;
 
-		void loadScene(const std::string& fileName);
+		void loadScene(const fs::path& fileName);
 		ASSET_ID loadMesh(aiMesh* inMesh, std::shared_ptr<Scene>& scene);
 		ASSET_ID loadTexture2D(aiTexture* inTex);
-		ASSET_ID loadTexture2D(const std::string& fileName);
-		ASSET_ID loadTextureCube(const std::string& fileName);
-		ASSET_ID loadMaterial(aiMaterial* inMat, std::shared_ptr<Scene>& scene);
+		ASSET_ID loadTexture2D(const fs::path& fileName);
+		ASSET_ID loadTextureCube(const fs::path& fileName);
+		ASSET_ID loadMaterial(aiMaterial* inMat, std::shared_ptr<Scene>& scene, fs::path sceneDir);
 
 		std::unordered_map<ASSET_ID, std::shared_ptr<Mesh>> mp_meshes;
 		std::unordered_map<ASSET_ID, std::shared_ptr<Texture>> mp_textures;
+		std::unordered_map<ASSET_ID, std::shared_ptr<Texture>> mp_cubemaps;
 		std::unordered_map<ASSET_ID, std::shared_ptr<Material>> mp_materials;
 
 		// string map for easy use

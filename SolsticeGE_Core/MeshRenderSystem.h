@@ -25,8 +25,6 @@ namespace SolsticeGE {
 	private:
 
 		void setTexture(const ASSET_ID& texture, int shaderSlot);
-
-		float angle;
 	};
 
 }

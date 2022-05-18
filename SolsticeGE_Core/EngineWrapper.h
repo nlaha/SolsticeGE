@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <entt/entt.hpp>
 #include <string>
+#include <chrono>
 
 #if BX_PLATFORM_LINUX
 #define GLFW_EXPOSE_NATIVE_X11
@@ -17,6 +18,8 @@
 #include "System.h"
 #include "RenderCommon.h"
 #include "AssetLibrary.h"
+#include "Utility.h"
+#include "InputManager.h"
 
 // systems
 #include "MeshRenderSystem.h"
@@ -25,6 +28,8 @@
 #include "LightRenderSystem.h"
 
 #include "SceneSpawnerSystem.h"
+#include "SceneHierarchySystem.h"
+#include "PlayerControllerSystem.h"
 
 namespace SolsticeGE {
 
@@ -33,11 +38,29 @@ namespace SolsticeGE {
 	constexpr bgfx::ViewId kRenderPassLight = 2;
 	constexpr bgfx::ViewId kRenderPassCombine = 3;
 
+	constexpr float kLightPoint = 1.0f;
+	constexpr float kLightDirectional = 0.0f;
+
 	struct VideoSettings
 	{
 		int windowWidth;
 		int windowHeight;
 		bgfx::RendererType::Enum graphicsApi;
+	};
+
+	struct MouseData {
+		double mousePosX;
+		double mousePosY;
+
+		double mouseLastX;
+		double mouseLastY;
+		
+		float yaw;
+		float pitch;
+
+		bool firstMouse;
+
+		glm::vec3 cameraFront;
 	};
 
 	class EngineWrapper
@@ -82,6 +105,11 @@ namespace SolsticeGE {
 		static bgfx::ProgramHandle prog_mesh;
 
 		static int gbufferDebugMode;
+
+		static MouseData userInput;
+
+		static std::vector<glm::mat4> entityTransformLocal;
+		static std::vector<std::uint32_t> entityTransformParent;
 
 	private:
 		GLFWwindow* mp_window;

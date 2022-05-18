@@ -5,12 +5,11 @@ using namespace SolsticeGE;
 
 MeshRenderSystem::MeshRenderSystem()
 {
-	angle = 0;
 }
 
 void MeshRenderSystem::update(entt::registry& registry)
 {
-	auto ecs_view = registry.view<
+	auto mesh_view = registry.view<
 		const c_transform,
 		const c_mesh, 
 		const c_shader,
@@ -29,7 +28,7 @@ void MeshRenderSystem::update(entt::registry& registry)
 		| UINT64_C(0)
 		;
 
-	for (const auto& [entity, transform, mesh, shader, material] : ecs_view.each())
+	for (const auto& [entity, transform, mesh, shader, material] : mesh_view.each())
 	{
 		std::weak_ptr<AssetLibrary::Mesh> meshAsset;
 		if (!EngineWrapper::assetLib.getMesh(mesh.assetId, meshAsset))
@@ -38,23 +37,13 @@ void MeshRenderSystem::update(entt::registry& registry)
 		}
 
 		if (meshAsset.lock() != nullptr && meshAsset.lock()->bufferLoaded) {
-			glm::mat4 modelMatrix;
 
-			// compute matrix;
-			modelMatrix = glm::toMat4(transform.rot);
-			//angle += 0.000001f * EngineWrapper::dt;
-			//modelMatrix = glm::rotate(modelMatrix, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-
-			modelMatrix = glm::translate(modelMatrix, transform.pos);
-			modelMatrix = glm::scale(modelMatrix, transform.scale);
-
-			bgfx::setTransform(&modelMatrix[0][0]);
+			bgfx::setTransform(&transform.computedMatrix[0][0]);
 		
 			bgfx::setVertexBuffer(0, meshAsset.lock()->vbuf);
 			bgfx::setIndexBuffer(meshAsset.lock()->ibuf);
 
-			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelMatrix)));
-
+			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform.computedMatrix)));
 			bgfx::setUniform(EngineWrapper::shaderUniforms.at("normalMatrix"), &normalMatrix[0]);
 
 			// render diffuse map

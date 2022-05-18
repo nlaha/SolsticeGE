@@ -33,10 +33,11 @@ namespace SolsticeGE {
 	/// in the render thread
 	/// </summary>
 	struct c_transform {
-
 		glm::vec3 pos;
 		glm::quat rot;
 		glm::vec3 scale;
+
+		glm::mat4 computedMatrix;
 	};
 
 	struct c_scene {
@@ -77,6 +78,7 @@ namespace SolsticeGE {
 		ASSET_ID emissive_tex;
 
 		bool isPacked;
+		bool bufferLoaded;
 	};
 
 	/// <summary>
@@ -108,6 +110,7 @@ namespace SolsticeGE {
 
 		glm::mat4 viewMatrix;
 		glm::mat4 projMatrix;
+		glm::mat4 modelMatrix;
 	};
 
 }

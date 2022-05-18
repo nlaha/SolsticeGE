@@ -1,0 +1,11 @@
+Model Information:
+* title:	IMC Spider Tank
+* source:	https://sketchfab.com/3d-models/imc-spider-tank-f8bb7a2488414d1fa62b4966ff320247
+* author:	Valery Kharitonov (https://sketchfab.com/KJLOYH)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "IMC Spider Tank" (https://sketchfab.com/3d-models/imc-spider-tank-f8bb7a2488414d1fa62b4966ff320247) by Valery Kharitonov (https://sketchfab.com/KJLOYH) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

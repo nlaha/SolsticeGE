@@ -4,7 +4,6 @@
 #include "stb_image.h"
 
 using namespace SolsticeGE;
-namespace fs = std::filesystem;
 
 AssetLibrary::AssetLibrary()
 {
@@ -54,6 +53,27 @@ bool AssetLibrary::getTexture(const ASSET_ID& id, std::weak_ptr<Texture>& textur
 	}
 }
 
+bool SolsticeGE::AssetLibrary::getCubemap(const ASSET_ID& id, std::weak_ptr<Texture>& texture)
+{
+	const auto& iter = this->mp_cubemaps.find(id);
+	if (iter != this->mp_cubemaps.end())
+	{
+		if (iter->second != nullptr)
+		{
+			texture = iter->second;
+			return true;
+		}
+		else {
+			spdlog::error("Cubemap: {} was loaded but is now null!", id);
+			return false;
+		}
+	}
+	else {
+		spdlog::error("Cubemap: {} is not loaded!", id);
+		return false;
+	}
+}
+
 bool AssetLibrary::getMaterial(const ASSET_ID& id, std::weak_ptr<Material>& material)
 {
 	const auto& iter = this->mp_materials.find(id);
@@ -96,11 +116,16 @@ bool AssetLibrary::getScene(const std::string& name, std::weak_ptr<Scene>& scene
 	}
 }
 
+std::unordered_map<ASSET_ID, std::shared_ptr<AssetLibrary::Texture>> SolsticeGE::AssetLibrary::getCubemaps()
+{
+	return this->mp_cubemaps;
+}
+
 bool AssetLibrary::loadAssets(const std::string& assetDir)
 {
 	const fs::path assetPath(assetDir);
 
-	for (const auto& entry : fs::directory_iterator(assetPath)) {
+	for (const auto& entry : fs::recursive_directory_iterator(assetPath)) {
 		const auto filenameStr = entry.path().filename().string();
 		if (entry.is_regular_file()) {
 			if (entry.path().extension() == ".glb" ||
@@ -111,11 +136,17 @@ bool AssetLibrary::loadAssets(const std::string& assetDir)
 				loadScene(entry.path().string());
 			}
 
-			//// load cubemaps
-			//if (entry.path().extension() == ".hdr")
-			//{
-			//	loadTextureCube(entry.path().string());
-			//}
+			// load cubemaps
+			// We're loading them as 2d textures as
+			// they're in equirectangular mapping and
+			// need to be rendered to a cubemap texture
+			// this saves converting them outside of the engine
+			// and also allows us to use the system for
+			// irradiance/reflection probes
+			if (entry.path().extension() == ".hdr")
+			{
+				loadTextureCube(entry.path().string());
+			}
 
 			// etc...
 		}
@@ -130,13 +161,13 @@ bool AssetLibrary::loadAssets(const std::string& assetDir)
 /// meshes, textures, materials and lights
 /// </summary>
 /// <param name="fileName"></param>
-void AssetLibrary::loadScene(const std::string& fileName)
+void AssetLibrary::loadScene(const fs::path& fileName)
 {
-	spdlog::info("Loading scene from {}", fileName);
+	spdlog::info("Loading scene from {}", fileName.string());
 
 	Assimp::Importer importer;
 
-	const aiScene* inScene = importer.ReadFile(fileName,
+	const aiScene* inScene = importer.ReadFile(fileName.string(),
 		aiProcess_Triangulate |
 		aiProcess_OptimizeGraph |
 		aiProcess_OptimizeMeshes |
@@ -151,6 +182,9 @@ void AssetLibrary::loadScene(const std::string& fileName)
 		spdlog::error("Scene import failed! Error: {}", importer.GetErrorString());
 		return;
 	}
+
+	// get scene directory
+	fs::path sceneDir = fileName.parent_path();
 
 	std::shared_ptr<AssetLibrary::Scene> scene = std::make_shared<AssetLibrary::Scene>();
 
@@ -173,7 +207,7 @@ void AssetLibrary::loadScene(const std::string& fileName)
 		{
 			aiMaterial* inMat = inScene->mMaterials[i];
 
-			ASSET_ID id = loadMaterial(inMat, scene);
+			ASSET_ID id = loadMaterial(inMat, scene, sceneDir);
 			scene->materials.push_back(id);
 		}
 	}
@@ -186,15 +220,15 @@ void AssetLibrary::loadScene(const std::string& fileName)
 			aiMesh* inMesh = inScene->mMeshes[i];
 			ASSET_ID id = loadMesh(inMesh, scene);
 			scene->meshes.push_back(id);
-		}
+		}	
 	}
 
-	this->mp_scenes.emplace(fileName, scene);
+	this->mp_scenes.emplace(fileName.string(), scene);
 
-	spdlog::info("Done loading scene from {}", fileName);
+	spdlog::info("Done loading scene from {}", fileName.string());
 }
 
-ASSET_ID AssetLibrary::loadMaterial(aiMaterial* inMat, std::shared_ptr<Scene>& scene)
+ASSET_ID AssetLibrary::loadMaterial(aiMaterial* inMat, std::shared_ptr<Scene>& scene, fs::path sceneDir)
 {
 	std::shared_ptr<Material> material = std::make_shared<Material>();
 	material->diffuse_tex = ASSET_ID_INVALID;
@@ -231,8 +265,11 @@ ASSET_ID AssetLibrary::loadMaterial(aiMaterial* inMat, std::shared_ptr<Scene>& s
 		else
 		{
 			// file based texture (external)
-			spdlog::info("Texture external, loading from file {}", texturePath.C_Str());
-			return loadTexture2D(texturePath.C_Str());
+			fs::path fullTexPath = sceneDir;
+			fullTexPath.append(fs::path(texturePath.C_Str()).make_preferred().string());
+			spdlog::info("Texture external, loading from file {}", fullTexPath.string());
+		
+			return loadTexture2D(fullTexPath);
 		}
 	};
 
@@ -435,15 +472,13 @@ ASSET_ID AssetLibrary::loadTexture2D(aiTexture* inTex)
 /// </summary>
 /// <param name="fileName"></param>
 /// <returns></returns>
-ASSET_ID AssetLibrary::loadTexture2D(const std::string& fileName)
+ASSET_ID AssetLibrary::loadTexture2D(const fs::path& fileName)
 {
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 	texture->bufferLoaded = false;
 
-	std::string filePath = "assets/" + fileName;
-
 	int width = 0, height = 0, nrComponents = 0;
-	unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrComponents, STBI_rgb_alpha);
+	unsigned char* data = stbi_load(fileName.string().c_str(), &width, &height, &nrComponents, STBI_rgb_alpha);
 
 	if (height != 0 && width != 0) {
 		texture->texData = data;
@@ -458,7 +493,7 @@ ASSET_ID AssetLibrary::loadTexture2D(const std::string& fileName)
 
 		texture->texInfo = texInfo;
 
-		spdlog::info("Texture loaded from {}", fileName);
+		spdlog::info("Texture loaded from {}", fileName.string());
 
 		ASSET_ID idOut = this->m_textureCount;
 		this->mp_textures.emplace(this->m_textureCount, texture);
@@ -476,13 +511,13 @@ ASSET_ID AssetLibrary::loadTexture2D(const std::string& fileName)
 /// </summary>
 /// <param name="fileName"></param>
 /// <returns></returns>
-ASSET_ID AssetLibrary::loadTextureCube(const std::string& fileName)
+ASSET_ID AssetLibrary::loadTextureCube(const fs::path& fileName)
 {
 	std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 	texture->bufferLoaded = false;
 
 	int width, height, nrComponents;
-	float* data = stbi_loadf(fileName.c_str(), &width, &height, &nrComponents, STBI_rgb_alpha);
+	float* data = stbi_loadf(fileName.string().c_str(), &width, &height, &nrComponents, STBI_rgb_alpha);
 
 	texture->texDataFloat = data;
 
@@ -490,17 +525,17 @@ ASSET_ID AssetLibrary::loadTextureCube(const std::string& fileName)
 
 	texInfo.width = width;
 	texInfo.height = height;
-	texInfo.storageSize = (width * height) * 4;
-	texInfo.format = bgfx::TextureFormat::RGBA16F;
-	texInfo.cubeMap = false;
+	texInfo.storageSize = (width * height) * 16;
+	texInfo.format = bgfx::TextureFormat::RGBA32F;
+	texInfo.cubeMap = true;
 
 	texture->texInfo = texInfo;
 
-	ASSET_ID idOut = this->m_textureCount;
-	this->mp_textures.emplace(this->m_textureCount, texture);
-	this->m_textureCount++;
+	ASSET_ID idOut = this->m_cubemapCount;
+	this->mp_cubemaps.emplace(this->m_cubemapCount, texture);
+	this->m_cubemapCount++;
 
-	spdlog::info("Texture loaded from {} with channels {}", fileName, nrComponents);
+	spdlog::info("Texture loaded from {} with channels {}", fileName.string(), nrComponents);
 
 	return idOut;
 }
